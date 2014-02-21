@@ -18,7 +18,7 @@
 # {{{ 配置部分
 
 # 路径配置
-PATH_SWAN="/usr/local/swan"
+PATH_SWAN="/usr/local/swan_mon"
 PATH_PWD=`pwd`
 
 DIR_OWER="swan:swan"
@@ -29,14 +29,7 @@ DIR_MOD="755"
 ARRAY_DIRS=(
     "tmp"
     "log"
-        "log/stdout"
-        "log/backup"
-            "log/backup/archive"
-            "log/backup/error"
-            "log/backup/large"
-        "log/httpd"
     "data"
-        "data/mysql"
     "run"
 )
 
@@ -50,7 +43,7 @@ ARRAY_CHOWN=(
 
 # 需要 chmod 的目录 ( [权限] [是否需要递归. 1 | 0] [路径] )
 ARRAY_CHMOD=(
-    "755" "0" "app/sbin/sw_phpd"
+    "755" "0" "app/sbin/sw_mond"
 )
 
 # }}}

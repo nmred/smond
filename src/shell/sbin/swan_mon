@@ -16,9 +16,6 @@
 #
 #
 # 此脚本将控制如下进程, 如果进程列表有变化, 则必须更新 Start, Stop 和 Watch:
-#   Httpd
-#   MySQL
-#   Snmpd
 #   CRON_ETC
 #
 # 返回代码
@@ -31,13 +28,9 @@
 PATH_SWAN="/usr/local/swan"
 PATH_OPT="$PATH_SWAN/opt"
 PATH_SBIN="$PATH_SWAN/app/sbin"
-PATH_SBIN_PHPD="$PATH_SBIN/sw_phpd"
+PATH_SBIN_MOND="$PATH_SBIN/sw_mond"
 PATH_OPT_ETC="$PATH_SWAN/etc"
-PATH_OPT_MYSQL="$PATH_OPT/mysql"
-PATH_OPT_HTTP="$PATH_OPT/apache2"
-PATH_OPT_SNMP="$PATH_OPT/snmp"
 PATH_OPT_REDIS="$PATH_OPT/"
-PATH_OPT_MEMCAHED="$PATH_OPT/memcached"
 PATH_OPT_RSYSLOG="$PATH_OPT"
 PATH_RUN="$PATH_SWAN/run"
 PATH_LOG="$PATH_SWAN/log"
@@ -46,13 +39,9 @@ PATH_LOG_STDOUT="$PATH_LOG/stdout"
 PATH_CONFIG="$PATH_OPT_ETC/sw_init_config"
 PATH_SW_CROND="/etc/cron.d/swan_soft"
 
-PIDF_MYSQL="$PATH_RUN/sw_mysql.pid"
-PIDF_HTTPD="$PATH_RUN/sw_httpd.pid"
 PIDF_REDIS="$PATH_RUN/sw_redis.pid"
-PIDF_PHPD="$PATH_RUN/sw_phpd.pid"
-PIDF_MEMCACHED="$PATH_RUN/sw_memcached.pid"
+PIDF_MOND="$PATH_RUN/sw_mond.pid"
 PIDF_RSYSLOGD="$PATH_RUN/sw_rsyslogd.pid"
-PIDF_SNMPD="$PATH_RUN/sw_snmpd.pid"
 
 ECHO_LINE="------------------------------"
 ECHO_FAIL="\033[0;31mFAIL\033[0m"
@@ -323,43 +312,6 @@ get_proc_name ()
     echo "${array_watch_proc_name[$n]}"
 }
 
-watch_mysql ()
-{
-    watch_res="0"
-
-    CMD_MYSQL_PING="./bin/mysqladmin --defaults-file=$PATH_OPT_ETC/my.cnf ping"
-
-    # 获取 pid
-    get_pid $PIDF_MYSQL
-    if test "0" != "$get_pid_res"; then
-        watch_res="$get_pid_res"
-        return
-    fi
-
-    # ping 一下是否通
-    cd $PATH_OPT_MYSQL
-    eval $CMD_MYSQL_PING
-    if test 0 != $?; then
-        watch_res="mysql is not alive"
-        return
-    fi
-    cd $PATH_PWD
-
-    # 获取 mysqld_safe 的 pid
-    mysqld_safe_pid=`ps -C mysqld -o ppid,pid | grep "\<$pid_no\>" | awk '{print $1}'`
-    if ! test "$mysqld_safe_pid"; then
-        watch_res="mysqld_safe process not running."
-        return
-    fi
-
-    pstree_pid "$mysqld_safe_pid"
-    if test "0" != "pstree_pid_res"; then
-        watch_res="$pstree_pid_res"
-    fi
-
-    pid_no="$mysqld_safe_pid-$pid_no"
-}
-
 watch_cron_etc ()
 {
     watch_res="0"
@@ -388,12 +340,9 @@ watch_cron_etc ()
 watch_proc ()
 {
     array_watch_common=(
-        httpd
-		snmpd
 		redis
-		memcached
 		rsyslogd
-		phpd
+		mond
     )
 
     t_proc_name_watch="$1"
@@ -513,85 +462,6 @@ init_start_var ()
 # 初始化变量
 init_start_var
 
-start_mysql ()
-{
-    init_res=0
-    init_msg=""
-
-    CMD_MYSQL_START="$CMD_SUDO_SWAN ./bin/mysqld_safe --defaults-file=$PATH_OPT_ETC/my.cnf &"
-    CMD_MYSQL_PING="./bin/mysqladmin --defaults-file=$PATH_OPT_ETC/my.cnf ping"
-
-    watch_proc mysql
-    if test "0" = "$watch_res"; then
-        init_res=2
-        return
-    fi
-
-    cd $PATH_OPT_MYSQL
-
-    eval $CMD_MYSQL_START
-    let "init_res = 0 || $?"
-
-    # 每隔 1 秒 ping 一下, 直到 ping 通或者超时
-    sleep_time=1
-    res_ping=1
-    t_len_timeout="${#MYSQL_START_TIMEOUT}"
-    t_pad_str_back=`seq $t_len_timeout | xargs -i echo -n "\x08"`"\x08\x08"
-    t_pad_str_sp=`printf "%${t_len_timeout}s  " " "`
-
-    # 在启动之后输出的信息
-    start_out_last=""
-
-    restore_stdout
-    printf "%-${t_len_timeout}ss " "$MYSQL_START_TIMEOUT"
-    reassign_stdout
-    let "left_time = $MYSQL_START_TIMEOUT - 1"
-
-    while test 0 != "$res_ping"; do
-        sleep 1
-
-        eval $CMD_MYSQL_PING
-        res_ping=$?
-
-        let "sleep_time += 1"
-        start_out_last="  (${sleep_time}s)"
-
-        echo_stdout -ne "$t_pad_str_back"
-        restore_stdout
-        printf "%-${t_len_timeout}ss " "$left_time"
-        reassign_stdout
-
-        let "left_time = $MYSQL_START_TIMEOUT - $sleep_time"
-        if test $sleep_time -gt $MYSQL_START_TIMEOUT; then
-            echo_stdout -ne "$t_pad_str_back$t_pad_str_sp$t_pad_str_back"
-            start_out_last=""
-            init_res=3
-            init_msg="mysql$type_mysql starting timeout. more than ${MYSQL_START_TIMEOUT}s."
-            return
-        fi
-    done
-
-    cd $PATH_PWD
-    sleep 1
-
-    echo_stdout -ne "$t_pad_str_back$t_pad_str_sp$t_pad_str_back"
-}
-
-start_httpd ()
-{
-    init_res=0
-    init_msg=""
-
-    watch_proc httpd
-    if test "0" = "$watch_res"; then
-        init_res=2
-        return
-    fi
-
-    $PATH_OPT_HTTP/bin/apachectl -f $PATH_OPT_ETC/httpd.conf -k start
-    let "init_res = 0 || $?"
-}
-
 start_redis ()
 {
     init_res=0
@@ -607,18 +477,18 @@ start_redis ()
     let "init_res = 0 || $?"
 }
 
-start_phpd ()
+start_mond ()
 {
     init_res=0
     init_msg=""
 
-    watch_proc phpd
+    watch_proc mond
     if test "0" = "$watch_res"; then
         init_res=2
         return
     fi
 
-    $PATH_SBIN_PHPD -k start
+    $PATH_SBIN_MOND -k start
     let "init_res = 0 || $?"
 }
 
@@ -652,21 +522,6 @@ start_rsyslogd ()
     let "init_res = 0 || $?"
 }
 
-start_snmpd ()
-{
-    init_res=0
-    init_msg=""
-
-    watch_proc snmpd
-    if test "0" = "$watch_res"; then
-        init_res=2
-        return
-    fi
-
-    $PATH_OPT_SNMP/sbin/snmpd -c $PATH_OPT_ETC/snmp.conf -p $PIDF_SNMPD
-    let "init_res = 0 || $?"
-}
-
 start_cron_etc ()
 {
     init_res=0
@@ -685,8 +540,6 @@ start_cron_etc ()
 stop_proc ()
 {
     array_stop_common=(
-		snmpd
-		memcached
 		rsyslogd
     )
 
@@ -741,21 +594,12 @@ stop_cron_etc ()
     return $init_res
 }
 
-stop_httpd ()
+stop_mond ()
 {
     init_res=0
     init_msg=""
 
-    $PATH_OPT_HTTP/bin/apachectl -f $PATH_OPT_ETC/httpd.conf -k stop
-    let "init_res = 0 || $?"
-}
-
-stop_phpd ()
-{
-    init_res=0
-    init_msg=""
-
-	$PATH_SBIN_PHPD -k stop
+	$PATH_SBIN_MOND -k stop
     let "init_res = 0 || $?"
 }
 
@@ -766,22 +610,6 @@ stop_redis ()
 
     $PATH_OPT_REDIS/bin/redis-cli shutdown
     let "init_res = 0 || $?"
-}
-
-stop_mysql()
-{
-    init_res=0
-    init_msg=""
-
-    CMD_MYSQL_STOP="./bin/mysqladmin --defaults-file=$PATH_OPT_ETC/my.cnf shutdown"
-
-    cd $PATH_OPT_MYSQL
-    eval $CMD_MYSQL_STOP
-    let "init_res = 0 || $?"
-    cd $PATH_PWD
-    sleep 1
-
-    return $init_res
 }
 
 chown_run ()
@@ -868,7 +696,7 @@ stop ()
 
 stops ()
 {
-    ARRAY_STOP=(${ARRAY_STOP[@]##mysql*})
+    ARRAY_STOP=(${ARRAY_STOP[@]})
     stop $1
 }
 
