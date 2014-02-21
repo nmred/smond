@@ -40,7 +40,7 @@ PATH_CONFIG="$PATH_OPT_ETC/sw_init_config"
 PATH_SW_CROND="/etc/cron.d/swan_soft"
 
 PIDF_REDIS="$PATH_RUN/sw_redis.pid"
-PIDF_MOND="$PATH_RUN/sw_mond.pid"
+PIDF_SMOND="$PATH_RUN/sw_mond.pid"
 PIDF_RSYSLOGD="$PATH_RUN/sw_rsyslogd.pid"
 
 ECHO_LINE="------------------------------"
@@ -342,7 +342,7 @@ watch_proc ()
     array_watch_common=(
 		redis
 		rsyslogd
-		mond
+		smond
     )
 
     t_proc_name_watch="$1"
@@ -477,33 +477,18 @@ start_redis ()
     let "init_res = 0 || $?"
 }
 
-start_mond ()
+start_smond ()
 {
     init_res=0
     init_msg=""
 
-    watch_proc mond
+    watch_proc smond
     if test "0" = "$watch_res"; then
         init_res=2
         return
     fi
 
     $PATH_SBIN_MOND -k start
-    let "init_res = 0 || $?"
-}
-
-start_memcached ()
-{
-    init_res=0
-    init_msg=""
-
-    watch_proc memcached
-    if test "0" = "$watch_res"; then
-        init_res=2
-        return
-    fi
-
-    $PATH_OPT_MEMCAHED/bin/memcached -d -u swan -m 512 127.0.0.1 -p 11212 -P $PIDF_MEMCACHED 
     let "init_res = 0 || $?"
 }
 
@@ -594,7 +579,7 @@ stop_cron_etc ()
     return $init_res
 }
 
-stop_mond ()
+stop_smond ()
 {
     init_res=0
     init_msg=""
