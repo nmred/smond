@@ -54,20 +54,6 @@ class sw_smond
 	}
 
 	// }}}
-	// {{{ public function get_metrics()
-
-	/**
-	 * 获取监控队列 
-	 * 
-	 * @access public
-	 * @return void
-	 */
-	public function get_metrics()
-	{
-		
-	}
-
-	// }}}
 	// {{{ public function get_process_config()
 
 	/**
@@ -95,6 +81,20 @@ class sw_smond
 	{
 		$this->__process_cgf = $config;	
 		return $this;
+	}
+
+	// }}}
+	// {{{ public function get_control()
+
+	/**
+	 * 获取进程控制对象 
+	 * 
+	 * @access public
+	 * @return void
+	 */
+	public function get_control()
+	{
+		return new \lib\smond\sw_smond_control($this);		
 	}
 
 	// }}}

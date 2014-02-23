@@ -31,9 +31,9 @@ class sw_smond_control
     // {{{ const
 
     /**
-     * 1分钟，主进程睡眠时间 
+     * 主进程轮询控制时间 
      */
-    const SLEEP_SECS = 1; // 1分钟，主进程睡眠时间
+    const SLEEP_SECS = 0.01; 
 
     /**
      * 进程间通信的管道 
@@ -131,7 +131,7 @@ class sw_smond_control
     public function __construct(\lib\smond\sw_smond $smond)
     {
         $this->__smond_config = $smond->get_process_config();
-        $this->__event_base = new EventBase();
+        $this->__event_base = new \EventBase();
         $this->__smond = $smond;
     }
 
@@ -159,7 +159,7 @@ class sw_smond_control
                 throw new sw_exception($log); 
             }
 
-            $is_loop = $this->__event_base->loop(EventBase::NO_CACHE_TIME);
+            $is_loop = $this->__event_base->loop();
             if (false === $is_loop) {
                 $log = "loop return fail, timeout: " . self::SLEEP_SECS;
                 $this->log($log, LOG_WARNING);
@@ -167,6 +167,13 @@ class sw_smond_control
             }
 
             foreach ($this->__pids as $pid => $val) {
+				if (!isset($this->__events[$pid])) {
+					$fifo_name = $this->_get_fifo_name($pid);
+					$fp = fopen($fifo_name, 'r+');
+					stream_set_blocking($fp, false);
+					$this->__events[$pid] = new \Event($this->__event_base, $fp, \Event::READ | \Event::WRITE, array($this, 'callback_event'), $pid);
+					$this->__events[$pid]->add();
+				}
                 if (!posix_kill($pid, 0)) {
                     $log = "child $pid is not active";
                     $this->log($log, LOG_DEBUG);
@@ -214,7 +221,7 @@ class sw_smond_control
 	public function log($message, $level)
 	{	
 		if (isset($this->__log)) {
-			$this->__log($message, $level);	
+			$this->__log->log($message, $level);	
 		} else {
 			return;	
 		}
@@ -290,10 +297,10 @@ class sw_smond_control
      */
     public function callback_event($fp, $what, $pid)
     {
-        $opt = EventBufferEvent::OPT_DEFER_CALLBACKS | EventBufferEvent::OPT_CLOSE_ON_FREE;
-        $event_buffer = new EventBufferEvent($this->__event_base, $fp, $opt);
+        $opt = \EventBufferEvent::OPT_DEFER_CALLBACKS | \EventBufferEvent::OPT_CLOSE_ON_FREE;
+        $event_buffer = new \EventBufferEvent($this->__event_base, $fp, $opt);
         $event_buffer->setCallbacks(array($this, 'callback_read'), null, array($this, 'callback_error'), $pid);
-        $event_buffer->enable(Event::READ);
+        $event_buffer->enable(\Event::READ);
     }
 
     // }}}
@@ -315,8 +322,15 @@ class sw_smond_control
 
         $context = explode(self::FIFO_SEPATATOR, $context);
         $context = end($context);
-        $context = json_decode($context);
-        $this->_create_timer($context);
+        $context = json_decode($context, true);
+		$this->log(json_encode($context), LOG_WARNING);
+		if (isset($context['timeout'])) {
+			$context = array(
+				$context['timeout'] / 1000,
+				$pid,
+			);
+			$this->_create_timer($context);
+		}
     }
 
     // }}}
@@ -327,14 +341,14 @@ class sw_smond_control
      * 
      * @param mixed $buf 
      * @param mixed $event 
-     * @param mixed $timeout 
+     * @param mixed $pid 
      * @access public
      * @return void
      */
     public function callback_error($buf, $event, $pid)
     {
         // 读写超时处理
-        if (EventBufferEvent::TIMEOUT & $event) {
+        if (\EventBufferEvent::TIMEOUT & $event) {
             $this->__events[$pid]->del();
             $log = "this event read timeout, timeout event.";
             $this->log($log, LOG_WARNING);
@@ -342,7 +356,7 @@ class sw_smond_control
         }
 
         // 读写错误处理
-        if (EventBufferEvent::ERROR & $event) {
+        if (\EventBufferEvent::ERROR & $event) {
             $this->__events[$pid]->del();
             $log = "this event read error, pid event.";
             $this->log($log, LOG_WARNING);
@@ -364,21 +378,22 @@ class sw_smond_control
      */
     public function callback_timer($context)
     {
-        list($timeout, $interval, $module_name, $metric_name) = $context;
+		list($timeout, $pid) = $context;
         if (!isset($this->__event_timer[$timeout])) {
-            $log = "this event timer has free, timeout: {$timeout}, interval: {$interval}.";
-            em_ld::log($log, __FILE__, __LINE__, LOG_DEBUG, self::LM, self::LC);
+            $log = "this event timer has free, timeout: {$timeout}.";
+            $this->log($log, LOG_DEBUG);
             return;
         }
 
         // 执行到此处证明子进程已经超时
-        $pids = array_flip($this->__pids);
-        if (isset($pids[$timeout])) {
-            posix_kill($pids[$timeout], SIGTERM);    
-            $log = "module_name:$module_name, metric_name: $metric_name, get data timeout.";
-            em_ld::log($log, __FILE__, __LINE__, LOG_INFO, self::LM, self::LC);
-            $this->_fork($timeout, $context);
+        if (!posix_kill($pid, SIGTERM)) {
+            $log = posix_strerror(posix_get_last_error());
+            $this->log($log, LOG_INFO);
         }
+		$this->_fork();
+		//$log = "module_name:$module_name, metric_name: $metric_name, get data timeout.";
+		$log = $pid . 'proc timeout ...................';
+		$this->log($log, LOG_INFO);
     }
 
     // }}}
@@ -434,17 +449,12 @@ class sw_smond_control
                 exit(1);
             }
 
-			$fp = fopen($fifo_name, 'r+');
-			stream_set_blocking($fp, false);
-			$this->__events[$pid] = new Event($this->__event_base, $fp, Event::READ | Event::WRITE, array($this, 'callback_event'), $pid);
-			$this->__events[$pid]->add();
-
-            //$metric = new em_pgmond_metric($this->__pgmond);
-            //$metric->init($timeout, $context);
-            //while(1) {
-            //    $metric->run($timeout, $context);
-            //}
-            //exit(0);
+            $metric = new \lib\smond\sw_smond_metric($this->__smond);
+			$metric->init();
+			while(1) {
+                $metric->run();
+			}
+            exit(0);
         } else {
             $this->__pids[$pid] = true;
 
@@ -530,26 +540,23 @@ class sw_smond_control
     /**
      * 创建一个定时器 
      * 
-     * @param array $context 
+     * @param int $context 
      * @access protected
      * @return void
      */
     protected function _create_timer($context)
     {
-        list($timeout, $interval, $module_name, $metric_name) = $context;
-        $this->__event_timer[$timeout] = Event::timer($this->__event_base, array($this, 'callback_timer'), $context);       
+		list($timeout, $pid) = $context;
+        $this->__event_timer[$timeout] = \Event::timer($this->__event_base, array($this, 'callback_timer'), $context);       
         if (false === $this->__event_timer[$timeout]) {
             $log = "create event parent fifo timeout timer faild, interval: {$timeout}.";
-            em_ld::log($log, __FILE__, __LINE__, LOG_WARNING, self::LM, self::LC);
-            require_once PATH_EYOUM_LIB . 'pgmond/em_pgmond_exception.class.php';
-            throw new em_pgmond_exception($log); 
+            $this->log($log, LOG_WARNING);
+            throw new sw_exception($log); 
         }
         $this->__event_timer[$timeout]->add($timeout);
 
-        if (is_debug(LOG_DEBUG)) {
-            $log = "create a fifo event timer success, timeout: {$timeout}, interval: {$interval}.";
-            em_ld::log($log, __FILE__, __LINE__, LOG_DEBUG, self::LM, self::LC);
-        }
+        $log = "create a fifo event timer success, timeout: {$timeout}.";
+        $this->log($log, LOG_DEBUG);
     }
 
     // }}}

@@ -54,6 +54,14 @@ class sw_smond_metric
      */
     protected $__metric_instances = array();
 
+	/**
+	 * redis 连接 
+	 * 
+	 * @var mixed
+	 * @access protected
+	 */
+	protected $__redis = null;
+
     // }}} end members
     // {{{ functions
     // {{{ public function __construct()
@@ -67,6 +75,7 @@ class sw_smond_metric
     public function __construct(\lib\smond\sw_smond $smond)
     {
         $this->__smond = $smond;
+		$this->__redis = \swan\redis\sw_redis::singleton();
     }
 
     // }}}
@@ -92,6 +101,23 @@ class sw_smond_metric
      */
     public function run()
     {
+		$data = $this->__redis->lpop(SWAN_QUEUE_MONITOR);
+		$data = json_decode($data, true);
+		if (empty($data) || !isset($data['id']) || !isset($data['value'])) {
+			return;	
+		}
+
+		list($device_id, $monitor_id, $metric_id) = explode('_', $data['id']);
+		$cache_id = $device_id . '_' . $monitor_id . '_'; 
+		$basic  = json_decode($this->__redis->get($cache_id . 'basic'), true);
+		$params = json_decode($this->__redis->get($cache_id . 'params'), true);
+
+		var_dump($basic);
+		$data = array(
+			'timeout' => 1900,
+		);
+		$this->_write_fifo($data);
+		sleep(3);
     }
 
     // }}}
@@ -104,7 +130,7 @@ class sw_smond_metric
      * @access protected
      * @return void
      */
-    protected function _get_metric($timeout, $interval, $module_name_skip = null, $metric_name_skip = null)
+    protected function _get_metric()
     {
     }
 
