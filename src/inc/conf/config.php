@@ -15,4 +15,12 @@ return array(
 		'self' => 'localhost',
 		'port' => '10514',
 	),
+	'redis' => array(
+		'host' => '127.0.0.1',
+		'port' => '6380',
+	),
+	'data_host' => array(
+		'host' => '127.0.0.1',
+		'port' => '9080',
+	),
 );

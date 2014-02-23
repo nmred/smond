@@ -30,6 +30,7 @@ ARRAY_DIRS=(
     "tmp"
     "log"
     "data"
+		"data/redis"
     "run"
 )
 
