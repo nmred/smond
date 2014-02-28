@@ -5,7 +5,7 @@ $options = \lib\log\sw_log::get_logsvr_config();
 $options = array_merge($options, array('log_id' => 2));
 $writer  = sw_log::writer_factory('logsvr', $options);
 $message = sw_log::message_factory('phpd');
-$message->proc_name = 'swdata';
+$message->message = 'swdata';
 $log = new \lib\log\sw_log();
 $log->add_writer($writer);
 
@@ -19,7 +19,7 @@ $config = array(
 		"max_body" => 1048576,
 		"max_header" => 8192,
 );
-$process = new \lib\process\sw_smond_queue();
+$process = new \lib\process\sw_smond_config();
 $process->set_log($log);
 $process->set_message($message);
 $process->set_proc_config($config);

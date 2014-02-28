@@ -14,6 +14,7 @@
  
 namespace lib\smond;
 use \lib\smond\exception\sw_exception;
+use \lib\monitor\sw_monitor;
 
 /**
 +------------------------------------------------------------------------------
@@ -111,11 +112,19 @@ class sw_smond_metric
 		$cache_id = $device_id . '_' . $monitor_id . '_'; 
 		$basic  = json_decode($this->__redis->get($cache_id . 'basic'), true);
 		$params = json_decode($this->__redis->get($cache_id . 'params'), true);
+		if (empty($basic) || empty($params)) {
+			// 配置已经删除
+			return;	
+		}
 
-		var_dump($basic);
+		extract($basic);	
 		$data = array(
-			'timeout' => 1900,
+			'timeout' => $data['value']['time_threshold'],
+			'monitor_name' => $monitor_name,
+			'device_name'  => $device_name,
+			'metric_name'  => $data['value']['metric_name'],
 		);
+
 		$this->_write_fifo($data);
 		sleep(3);
     }
@@ -132,6 +141,8 @@ class sw_smond_metric
      */
     protected function _get_metric()
     {
+		$data = sw_monitor::run('harddisk', $params);
+		var_dump($data);
     }
 
     // }}}

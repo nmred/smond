@@ -13,7 +13,7 @@ return array(
 	'log' => array(
 		'host' => '127.0.0.1',
 		'self' => 'localhost',
-		'port' => '10514',
+		'port' => '10515',
 	),
 	'redis' => array(
 		'host' => '127.0.0.1',

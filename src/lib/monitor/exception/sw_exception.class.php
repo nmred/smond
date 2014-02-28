@@ -12,44 +12,18 @@
 // | $_SWANBR_WEB_DOMAIN_$
 // +---------------------------------------------------------------------------
  
+namespace lib\monitor\exception;
+use \lib\exception\sw_exception as sw_ex;
+
 /**
-+------------------------------------------------------------------------------
-* 全局函数
-+------------------------------------------------------------------------------
+* sw_exception 
 * 
-* @package 
+* @uses Exception
+* @package swan 
 * @version $_SWANBR_VERSION_$
 * @copyright $_SWANBR_COPYRIGHT_$
 * @author $_SWANBR_AUTHOR_$ 
-+------------------------------------------------------------------------------
 */
-
-// {{{ function P()
-
-function P($var)
-{
-	echo "\n===================\n";
-	if (is_bool($var)) {
-		var_dump($var);
-	} else if (is_string($var) || is_int($var)) {
-		echo $var;
-	} else {
-		print_r($var);	
-	}
-	echo "\n===================\n";
-}
-
-// }}}
-// {{{ function func_enjoy()
-
-/**
- * 空函数 
- * 
- * @access public
- * @return void
- */
-function func_enjoy()
+class sw_exception extends sw_ex
 {
 }
-
-// }}}

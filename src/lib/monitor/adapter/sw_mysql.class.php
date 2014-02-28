@@ -12,67 +12,78 @@
 // | $_SWANBR_WEB_DOMAIN_$
 // +---------------------------------------------------------------------------
  
-namespace lib\log;
-use \lib\log\exception\sw_exception;
+namespace lib\monitor\adapter;
+use lib\monitor\adapter\exception\sw_exception;
 
 /**
 +------------------------------------------------------------------------------
-* 日志模块 
+* sw_abstract 
 +------------------------------------------------------------------------------
 * 
+* @abstract
 * @package 
 * @version $_SWANBR_VERSION_$
-* @copyright Copyleft
+* @copyright $_SWANBR_COPYRIGHT_$
 * @author $_SWANBR_AUTHOR_$ 
 +------------------------------------------------------------------------------
 */
-class sw_log extends \swan\log\sw_log
+class sw_mysql extends sw_abstract
 {
-	// {{{ consts
-
-	const LOG_DEFAULT_ID = 1;
-	const LOG_PHPD_ID    = 2;
-	const LOG_MONITOR_ID = 3;
-
-	// }}}
+    // {{{ const
+    // }}}
 	// {{{ members
-	// }}}
-	// {{{ functions
-	// {{{ public static function L()
 	
 	/**
-	 * log 
+	 * 数据库连接 
 	 * 
-	 * @static
+	 * @var mixed
+	 * @access protected
+	 */
+	protected $__db = null;
+
+	// }}}
+	// {{{ functions
+	// {{{ public function __construct()
+	
+	/**
+	 * __construct 
+	 * 
+	 * @param array $params 
 	 * @access public
 	 * @return void
 	 */
-	public function L($message, $level)
+	public function __construct($params)
 	{
-		$options = array('log_id' => self::LOG_DEFAULT_ID);
-		$options = array_merge($options, self::get_logsvr_config());
-		$writer = parent::writer_factory('logsvr', $options);
-		parent::add_writer($writer);
-		parent::log($message, $level);
+		if (!isset($params['username'])) {
+			throw new sw_exception('monitor params `username` is not set.');	
+		}	
+
+		if (!isset($params['password'])) {
+			throw new sw_exception('monitor params `password` is not set.');	
+		}	
+
+		if (!isset($params['dsn'])) {
+			throw new sw_exception('monitor params `dsn` is not set.');	
+		}	
+
+		$this->__db = \swan\db\sw_db::singleton('mysql', $params);
 	}
 
-	// }}}		
-	// {{{ public static function get_logsvr_config()
+	// }}}
+	// {{{ protected function _run()
 
 	/**
-	 * 获取 logsvr 的配置 
+	 * 运行抽象方法 
 	 * 
-	 * @static
-	 * @access public
-	 * @return array
+	 * @abstract
+	 * @access protected
+	 * @return void
 	 */
-	public static function get_logsvr_config()
+	protected function _run()
 	{
-		return array(
-			'host' => \swan\config\sw_config::get_config('log:host'),
-			'port' => \swan\config\sw_config::get_config('log:port'),
-			'self' => \swan\config\sw_config::get_config('log:self'),
-		);	
+        $status_mysql = $this->__db->query('show global status;')->fetch_all();
+		$data = array();
+		return $data;
 	}
 
 	// }}}
