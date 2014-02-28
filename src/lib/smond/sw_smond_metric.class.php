@@ -63,6 +63,33 @@ class sw_smond_metric
 	 */
 	protected $__redis = null;
 
+	/**
+	 * 监控数据缓存 
+	 * 
+	 * @var array
+	 * @access protected
+	 */
+	protected $__cache_data = array(
+		'data' => array(),
+		'time' => array(),
+	);
+
+	/**
+	 * 日志对象 
+	 * 
+	 * @var mixed
+	 * @access protected
+	 */
+	protected $__log = null;
+
+	/**
+	 * 配置 
+	 * 
+	 * @var array
+	 * @access protected
+	 */
+	protected $__config = array();
+
     // }}} end members
     // {{{ functions
     // {{{ public function __construct()
@@ -77,6 +104,7 @@ class sw_smond_metric
     {
         $this->__smond = $smond;
 		$this->__redis = \swan\redis\sw_redis::singleton();
+		$this->__config = $smond->get_process_config();
     }
 
     // }}}
@@ -103,6 +131,11 @@ class sw_smond_metric
     public function run()
     {
 		$data = $this->__redis->lpop(SWAN_QUEUE_MONITOR);
+		if (!$data) { // 当队列扫描完成或读取失败时，为了控制进程误判超时需要向管道写入 0
+			$this->_write_fifo(0);
+			sleep(1);
+		}
+
 		$data = json_decode($data, true);
 		if (empty($data) || !isset($data['id']) || !isset($data['value'])) {
 			return;	
@@ -118,18 +151,73 @@ class sw_smond_metric
 		}
 
 		extract($basic);	
-		$data = array(
-			'timeout' => $data['value']['time_threshold'],
+		$metric_name = $data['value']['metric_name'];
+		$collect_every = $data['value']['collect_every'];
+		$fifo_data = array(
+			'timeout' => (int)$data['value']['time_threshold'],
 			'monitor_name' => $monitor_name,
+			'dm_name'      => $dm_name,
 			'device_name'  => $device_name,
-			'metric_name'  => $data['value']['metric_name'],
+			'metric_name'  => $metric_name,
 		);
 
-		$this->_write_fifo($data);
-		sleep(3);
+		// 告诉控制进程创建超时定时器
+		$this->_write_fifo($fifo_data);
+
+		if (!isset($this->__cache_data['data'][$device_id][$dm_id])
+			|| !isset($this->__cache_data['time'][$device_id][$dm_id])
+			|| (time() - $this->__cache_data['time'][$device_id][$dm_id]) > $collect_every) {
+			$metric_data = sw_monitor::run($monitor_name, $params);
+			$this->__cache_data['data'][(string)$device_id][(string)$dm_id] = $metric_data;
+			$this->__cache_data['time'][(string)$device_id][(string)$dm_id] = time();
+		}
+		
+		if (!isset($this->__cache_data['data'][$device_id][$dm_id][$metric_name])) {
+			return; // 不发送数据	
+		}	
+		
+		$value = $this->__cache_data['data'][$device_id][$dm_id][$metric_name];
+		$this->_send(array($data['id'], $value));
     }
 
     // }}}
+	// {{{ public function set_log()
+
+	/**
+	 * 设置日志对象 
+	 * 
+	 * @param \swan\log\sw_log $log 
+	 * @access public
+	 * @return void
+	 */
+	public function set_log($log)
+	{
+		if ($log) {
+			$this->__log = $log;	
+		}	
+
+		return $this;
+	}
+
+	// }}}
+	// {{{ public function log()
+
+	/**
+	 * 记录日志 
+	 * 
+	 * @access public
+	 * @return void
+	 */
+	public function log($message, $level)
+	{	
+		if (isset($this->__log)) {
+			$this->__log->log($message, $level);	
+		} else {
+			return;	
+		}
+	}
+
+	// }}}
     // {{{ protected function _get_metric()
 
     /**
@@ -139,10 +227,18 @@ class sw_smond_metric
      * @access protected
      * @return void
      */
-    protected function _get_metric()
+    protected function _send($data)
     {
-		$data = sw_monitor::run('harddisk', $params);
-		var_dump($data);
+		$data = json_encode($data);
+		$host_name = $this->__config['smeta_server'];
+		$fp = stream_socket_client("tcp://$host_name", $errno, $errstr, 3);
+		if (!$fp) {
+			$this->log('smeta server connect fail. host:' . $host_name);
+			return;	
+		}
+
+		fwrite($fp, $data);
+		fclose($fp);
     }
 
     // }}}

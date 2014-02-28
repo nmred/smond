@@ -146,7 +146,7 @@ class sw_smond_control
      */
     public function run()
     {
-		$proc_num = isset($this->__smond_config['proc_num']) ? $this->__smond_config['proc_num'] : self::DEFAULT_CHILD_PROC_NUM; 
+		$proc_num = isset($this->__smond_config['cproc_num']) ? $this->__smond_config['cproc_num'] : self::DEFAULT_CHILD_PROC_NUM; 
 		for ($i = 0; $i < $proc_num; $i++) {
             $this->_fork();    
 		}
@@ -322,12 +322,25 @@ class sw_smond_control
 
         $context = explode(self::FIFO_SEPATATOR, $context);
         $context = end($context);
-        $context = json_decode($context, true);
-		$this->log(json_encode($context), LOG_WARNING);
+		if ("0" == $context) {
+			$context = array();
+			$context['timeout'] = 2000; // 默认等待 2s ，当队列为空时	
+			$context['device_name'] = null;
+			$context['monitor_name'] = null;
+			$context['dm_name'] = null;
+			$context['metric_name'] = null;
+		} else {
+			$context = json_decode($context, true);
+			$this->log(json_encode($context), LOG_INFO);
+		}
 		if (isset($context['timeout'])) {
 			$context = array(
 				$context['timeout'] / 1000,
 				$pid,
+				$context['device_name'],
+				$context['monitor_name'],
+				$context['dm_name'],
+				$context['metric_name'],
 			);
 			$this->_create_timer($context);
 		}
@@ -378,7 +391,7 @@ class sw_smond_control
      */
     public function callback_timer($context)
     {
-		list($timeout, $pid) = $context;
+		list($timeout, $pid, $device_name, $monitor_name, $dm_name, $metric_name) = $context;
         if (!isset($this->__event_timer[$timeout])) {
             $log = "this event timer has free, timeout: {$timeout}.";
             $this->log($log, LOG_DEBUG);
@@ -391,8 +404,7 @@ class sw_smond_control
             $this->log($log, LOG_INFO);
         }
 		$this->_fork();
-		//$log = "module_name:$module_name, metric_name: $metric_name, get data timeout.";
-		$log = $pid . 'proc timeout ...................';
+		$log = "device_name:$device_name, dm_name:$dm_name, monitor_name:$monitor_name, metric_name: $metric_name, get data timeout.";
 		$this->log($log, LOG_INFO);
     }
 
@@ -450,6 +462,7 @@ class sw_smond_control
             }
 
             $metric = new \lib\smond\sw_smond_metric($this->__smond);
+			$metric->set_log($this->__log);
 			$metric->init();
 			while(1) {
                 $metric->run();

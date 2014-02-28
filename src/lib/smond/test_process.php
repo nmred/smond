@@ -10,7 +10,7 @@ $message->proc_name = 'smond';
 $log = new \lib\log\sw_log();
 $log->add_writer($writer);
 
-$smond = new \lib\smond\sw_smond();
+$smond = new \lib\smond\sw_smond(array('smeta_server' => '127.0.0.1:8649'));
 $control = $smond->get_control();
 $control->set_log($log);
 $control->run();

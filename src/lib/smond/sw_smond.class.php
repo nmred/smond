@@ -48,9 +48,9 @@ class sw_smond
 	 * @access public
 	 * @return void
 	 */
-	public function __construct()
+	public function __construct($config = array())
 	{
-			
+		$this->__process_cgf = $config;	
 	}
 
 	// }}}

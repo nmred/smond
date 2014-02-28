@@ -109,10 +109,10 @@ class sw_harddisk extends sw_abstract
     protected function _get_basic_info()
     {
         $metrics = array();
-        $cmd = "df {$this->__device} | awk 'NR > 1 { print $0}'";
+        $cmd = "df {$this->__device} 2>/dev/null | awk 'NR > 1 { print $0}' 2>/dev/null";
         exec($cmd, $rev, $status);
         
-        if ($status || !isset($rev[0])) { //执行错误
+        if (!isset($rev[0])) { //执行错误
             $this->log("get device basic info fail.", LOG_INFO);
             return $metrics;
         }
@@ -140,10 +140,10 @@ class sw_harddisk extends sw_abstract
     protected function _get_inode_info()
     {
         $metrics = array();
-        $cmd = "df {$this->__device} -i | awk 'NR > 1 { print $0}'";
+        $cmd = "df {$this->__device} -i 2>/dev/null | awk 'NR > 1 { print $0}' 2>/dev/null";
         exec($cmd, $rev, $status);
         
-        if ($status || !isset($rev[0])) { //执行错误
+        if (!isset($rev[0])) { //执行错误
             $this->log("get device inode basic info fail.", LOG_INFO);
             return $metrics;
         }
@@ -171,10 +171,10 @@ class sw_harddisk extends sw_abstract
     protected function _get_io_basic()
     {
         $metrics = array();
-        $cmd = "iostat {$this->__device} | awk 'NR > 6 { print $0}'";
+        $cmd = "iostat {$this->__device} 2>/dev/null | awk 'NR > 6 { print $0}' 2>/dev/null";
         exec($cmd, $rev, $status);
         
-        if ($status || !isset($rev[0])) { //执行错误
+        if (!isset($rev[0])) { //执行错误
             $this->log("get device io basic info fail.", LOG_INFO);
             return $metrics;
         }
@@ -203,11 +203,11 @@ class sw_harddisk extends sw_abstract
     protected function _get_io_extended()
     {
         $metrics = array();
-        $cmd = "iostat -x {$this->__device} | awk 'NR > 6 { print $0}'";
+        $cmd = "iostat -x {$this->__device} 2>/dev/null | awk 'NR > 6 { print $0}' 2>/dev/null";
         exec($cmd, $rev, $status);
         
-        if ($status || !isset($rev[0])) { //执行错误
-            $this->log("get device io basic info fail.", LOG_INFO);
+        if (!isset($rev[0])) { //执行错误
+            $this->log("get device io extend info fail.", LOG_INFO);
             return $metrics;
         }
 

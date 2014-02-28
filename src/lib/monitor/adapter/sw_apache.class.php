@@ -59,21 +59,6 @@ class sw_apache extends sw_abstract
 	// {{{ members
 	// }}}
 	// {{{ functions
-	// {{{ public function __construct()
-	
-	/**
-	 * __construct 
-	 * 
-	 * @param array $params 
-	 * @access public
-	 * @return void
-	 */
-	public function __construct($params)
-	{
-		
-	}
-
-	// }}}
 	// {{{ protected function _run()
 
 	/**
@@ -83,7 +68,7 @@ class sw_apache extends sw_abstract
 	 * @access protected
 	 * @return void
 	 */
-	protected function _run()
+	protected function _run($params)
 	{
 		$data = array();
 		return $data;

@@ -12,53 +12,66 @@
 // | $_SWANBR_WEB_DOMAIN_$
 // +---------------------------------------------------------------------------
  
-namespace lib\monitor\adapter;
-use lib\monitor\adapter\exception\sw_exception;
+namespace lib\process;
+use \lib\process\exception\sw_exception;
 
 /**
 +------------------------------------------------------------------------------
-* sw_abstract 
+* smond 模块 
 +------------------------------------------------------------------------------
 * 
-* @abstract
+* @uses sw
+* @uses _abstract
 * @package 
 * @version $_SWANBR_VERSION_$
 * @copyright $_SWANBR_COPYRIGHT_$
 * @author $_SWANBR_AUTHOR_$ 
 +------------------------------------------------------------------------------
 */
-class sw_mysql extends sw_abstract
+class sw_smond extends sw_abstract
 {
-    // {{{ const
+    // {{{ consts
     // }}}
-	// {{{ members
-	
+    // {{{ members
+
 	/**
-	 * 数据库连接 
+	 * 进程控制对象 
 	 * 
 	 * @var mixed
 	 * @access protected
 	 */
-	protected $__db = null;
+	protected $__control = null;
 
-	// }}}
-	// {{{ functions
-	// {{{ protected function _run()
+    // }}} end members
+    // {{{ functions
+    // {{{ protected function _init()
 
-	/**
-	 * 运行抽象方法 
-	 * 
-	 * @abstract
-	 * @access protected
-	 * @return void
-	 */
-	protected function _run($params)
-	{
-        //$status_mysql = $this->__db->query('show global status;')->fetch_all();
-		$data = array();
-		return $data;
-	}
+    /**
+     * 初始化
+     *
+     * @return void
+     */
+    protected function _init()
+    {
+        $this->log('Start smond .', LOG_DEBUG);
+		$smond = new \lib\smond\sw_smond($this->__proc_config);
+		$this->__control = $smond->get_control();
+		$this->__control->set_log($log);
+    }
 
-	// }}}
-	// }}}
+    // }}}
+    // {{{ protected function _run()
+
+    /**
+     * 单次执行
+     *
+     * @return void
+     */
+    protected function _run()
+    {
+		$this->__control->run();
+    }
+
+    // }}}
+    // }}} end functions
 }
