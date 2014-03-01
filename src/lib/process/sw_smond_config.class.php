@@ -195,6 +195,7 @@ class sw_smond_config extends sw_abstract
 			$config = \lib\inner_client\sw_inner_client::call('user', 'dispatch_config.do');
 		} catch (\swan\exception\sw_exception $e) {
 			$this->log($e->getMessage(), LOG_INFO);
+			return;
 		}
 
 		$redis = \swan\redis\sw_redis::singleton();

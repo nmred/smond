@@ -32,33 +32,33 @@ class sw_harddisk extends sw_abstract
     // {{{ const
 	
     // 磁盘分区空间大小
-    const DISK_SIZE   = 'harddisk_size';
-    const DISK_USED   = 'harddisk_used';
-    const DISK_FREE   = 'harddisk_free';
-    const DISK_USE    = 'harddisk_use';
-    const DISK_INODES = 'harddisk_inodes';
-    const DISK_IUSED  = 'harddisk_iused';
-    const DISK_IFREE  = 'harddisk_ifree';
-    const DISK_IUSE   = 'harddisk_iuse';
+    const DISK_SIZE   = 'size';
+    const DISK_USED   = 'used';
+    const DISK_FREE   = 'free';
+    const DISK_USE    = 'use';
+    const DISK_INODES = 'inodes';
+    const DISK_IUSED  = 'iused';
+    const DISK_IFREE  = 'ifree';
+    const DISK_IUSE   = 'iuse';
 
 
     // 磁盘的 IO 扩展信息
-    const DISK_TPS          = 'harddisk_tps';
-    const DISK_BLK_READ_SEC = 'harddisk_blk_read_sec';
-    const DISK_BLK_WRTN_SEC = 'harddisk_blk_wrtn_sec';
-    const DISK_BLK_READ     = 'harddisk_blk_read';
-    const DISK_BLK_WRTN     = 'harddisk_blk_wrtn';
-    const DISK_RRQM_SEC     = 'harddisk_rrqm_sec';
-    const DISK_WRQM_SEC     = 'harddisk_wrqm_sec';
-    const DISK_R_SEC        = 'harddisk_r_sec';
-    const DISK_W_SEC        = 'harddisk_w_sec';
-    const DISK_RSEC_SEC     = 'harddisk_rsec_sec';
-    const DISK_WSEC_SEC     = 'harddisk_wsec_sec';
-    const DISK_AVGRQ_SZ     = 'harddisk_avgrq_sz';
-    const DISK_AVGQU_SZ     = 'harddisk_avgqu_sz';
-    const DISK_AWAIT        = 'harddisk_await';
-    const DISK_SVCTM        = 'harddisk_svctm';
-    const DISK_UTIL         = 'harddisk_util';
+    const DISK_TPS          = 'tps';
+    const DISK_BLK_READ_SEC = 'blk_read_sec';
+    const DISK_BLK_WRTN_SEC = 'blk_wrtn_sec';
+    const DISK_BLK_READ     = 'blk_read';
+    const DISK_BLK_WRTN     = 'blk_wrtn';
+    const DISK_RRQM_SEC     = 'rrqm_sec';
+    const DISK_WRQM_SEC     = 'wrqm_sec';
+    const DISK_R_SEC        = 'r_sec';
+    const DISK_W_SEC        = 'w_sec';
+    const DISK_RSEC_SEC     = 'rsec_sec';
+    const DISK_WSEC_SEC     = 'wsec_sec';
+    const DISK_AVGRQ_SZ     = 'avgrq_sz';
+    const DISK_AVGQU_SZ     = 'avgqu_sz';
+    const DISK_AWAIT        = 'await';
+    const DISK_SVCTM        = 'svctm';
+    const DISK_UTIL         = 'util';
 
     // }}}
 	// {{{ members

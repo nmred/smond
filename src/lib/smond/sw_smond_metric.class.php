@@ -177,16 +177,16 @@ class sw_smond_metric
 		}	
 		
 		$value = $this->__cache_data['data'][$device_id][$dm_id][$metric_name];
-		$this->_send(array($data['id'], $value));
-    }
+			$this->_send(array($data['id'], array('value' => $value, 'time' => time())));
+		}
 
-    // }}}
-	// {{{ public function set_log()
+		// }}}
+		// {{{ public function set_log()
 
-	/**
-	 * 设置日志对象 
-	 * 
-	 * @param \swan\log\sw_log $log 
+		/**
+		 * 设置日志对象 
+		 * 
+		 * @param \swan\log\sw_log $log 
 	 * @access public
 	 * @return void
 	 */
@@ -218,7 +218,7 @@ class sw_smond_metric
 	}
 
 	// }}}
-    // {{{ protected function _get_metric()
+    // {{{ protected function _get_send()
 
     /**
      * 采集数据 
@@ -237,7 +237,7 @@ class sw_smond_metric
 			return;	
 		}
 
-		fwrite($fp, $data);
+		fwrite($fp, $data . "\r\n");
 		fclose($fp);
     }
 
