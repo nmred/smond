@@ -56,7 +56,7 @@ class sw_smond extends sw_abstract
         $this->log('Start smond .', LOG_DEBUG);
 		$smond = new \lib\smond\sw_smond($this->__proc_config);
 		$this->__control = $smond->get_control();
-		$this->__control->set_log($log);
+		$this->__control->set_log($this->__log);
     }
 
     // }}}
