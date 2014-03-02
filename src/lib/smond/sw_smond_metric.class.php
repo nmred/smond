@@ -218,7 +218,7 @@ class sw_smond_metric
 	}
 
 	// }}}
-    // {{{ protected function _get_send()
+    // {{{ protected function _send()
 
     /**
      * 采集数据 
@@ -233,7 +233,7 @@ class sw_smond_metric
 		$host_name = $this->__config['smeta_server'];
 		$fp = stream_socket_client("tcp://$host_name", $errno, $errstr, 3);
 		if (!$fp) {
-			$this->log('smeta server connect fail. host:' . $host_name);
+			$this->log('smeta server connect fail. host:' . $host_name, LOG_INFO);
 			return;	
 		}
 
