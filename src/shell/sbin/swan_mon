@@ -37,7 +37,7 @@ PATH_LOG="$PATH_SWAN/log"
 PATH_INITLOG="$PATH_LOG/init.out"
 PATH_LOG_STDOUT="$PATH_LOG/stdout"
 PATH_CONFIG="$PATH_OPT_ETC/sw_init_config"
-PATH_SW_CROND="/etc/cron.d/swan_soft"
+PATH_SW_CROND="/etc/cron.d/smond_cron"
 
 PIDF_REDIS="$PATH_RUN/sw_redis.pid"
 PIDF_SMOND="$PATH_RUN/sw_mond.pid"
@@ -526,6 +526,7 @@ stop_proc ()
 {
     array_stop_common=(
 		rsyslogd
+		redis
     )
 
     t_proc_name_stop="$1"
@@ -585,15 +586,6 @@ stop_smond ()
     init_msg=""
 
 	$PATH_SBIN_MOND -k stop
-    let "init_res = 0 || $?"
-}
-
-stop_redis ()
-{
-    init_res=0
-    init_msg=""
-
-    $PATH_OPT_REDIS/bin/redis-cli shutdown
     let "init_res = 0 || $?"
 }
 
