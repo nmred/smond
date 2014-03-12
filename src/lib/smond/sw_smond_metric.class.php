@@ -145,8 +145,9 @@ class sw_smond_metric
 		$cache_id = $device_id . '_' . $monitor_id . '_'; 
 		$basic  = json_decode($this->__redis->get($cache_id . 'basic'), true);
 		$params = json_decode($this->__redis->get($cache_id . 'params'), true);
-		if (empty($basic) || empty($params)) {
+		if (empty($basic)) {
 			// 配置已经删除
+			$this->log('not exists basic info.', LOG_INFO);
 			return;	
 		}
 
@@ -177,16 +178,16 @@ class sw_smond_metric
 		}	
 		
 		$value = $this->__cache_data['data'][$device_id][$dm_id][$metric_name];
-			$this->_send(array($data['id'], array('value' => $value, 'time' => time())));
-		}
+		$this->_send(array($data['id'], array('value' => $value, 'time' => time())));
+	}
 
-		// }}}
-		// {{{ public function set_log()
+	// }}}
+	// {{{ public function set_log()
 
-		/**
-		 * 设置日志对象 
-		 * 
-		 * @param \swan\log\sw_log $log 
+	/**
+	 * 设置日志对象 
+	 * 
+	 * @param \swan\log\sw_log $log 
 	 * @access public
 	 * @return void
 	 */

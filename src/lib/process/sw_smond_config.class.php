@@ -199,6 +199,9 @@ class sw_smond_config extends sw_abstract
 		}
 
 		$redis = \swan\redis\sw_redis::singleton();
+		$old_dm_key = $redis->smembers(SWAN_CACHE_MINOTOR_IDS);
+		$dm_keys = array();
+
 		foreach ($config as $key => $value) {	
 			foreach ($value as $subfix => $val) {
 				if (!in_array($subfix, $this->__config_subfix)) {
@@ -209,8 +212,18 @@ class sw_smond_config extends sw_abstract
 				$cache_data = json_encode($val);
 				$redis->set($cache_id, $cache_data, self::EXPIRE_TIME);
 			}
-			$redis->sadd(SWAN_CACHE_MINOTOR_IDS, $key);
+			$dm_keys[] = $key;
+			$redis->sadd(SWAN_CACHE_MINOTOR_IDS, $key);	
 			$redis->expire(SWAN_CACHE_MINOTOR_IDS, self::EXPIRE_TIME);
+		}
+		
+		$del_dm_key = array_diff($old_dm_key, $dm_keys);
+		foreach ($del_dm_key as $key) {
+			$redis->srem(SWAN_CACHE_MINOTOR_IDS, $key);	
+			foreach ($this->__config_subfix as $subfix) {
+				$cache_id = $key . '_' . $subfix;
+				$redis->delete($cache_id);
+			}
 		}
 	}
 
