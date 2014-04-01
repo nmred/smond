@@ -2,10 +2,10 @@
 
 case $1 in
 build_rpm)
-	DIST_MASTER="/usr/local/tmp_swan_mon_git"	
+	DIST_MASTER="/usr/local/tmp_smond_git"	
 	;;
 *)
-	DIST_MASTER="/usr/local/swan_mon"
+	DIST_MASTER="/usr/local/swan/smond"
 esac
 
 
