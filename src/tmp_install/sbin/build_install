@@ -17,7 +17,7 @@
 #
 
 # 路径配置
-PATH_SWAN="/usr/local/swan_mon"
+PATH_SWAN="/usr/local/swan/smond"
 PATH_OPT="$PATH_SWAN/opt"
 PATH_OPT_ETC="$PATH_SWAN/etc"
 PATH_APP="$PATH_SWAN/app"
@@ -146,17 +146,17 @@ run_build_dirs ()
 ###### 设置启动服务脚本
 run_set_initd ()
 {
-    t_log_con="set swan_mon for /etc/init.d/swan_mon and /usr/bin/swan_mon"
+    t_log_con="set smond for /etc/init.d/smond and /usr/bin/smond"
     echo_log_prefix -n "$t_log_con ..."
 
-    t_path_swan_soft="$PATH_APP_SBIN/swan_mon"
-    t_path_sw_initd="/etc/init.d/swan_mon"
-    t_path_sw_usrbin="/usr/bin/swan_mon"
+    t_path_swan_soft="$PATH_APP_SBIN/smond"
+    t_path_sw_initd="/etc/init.d/smond"
+    t_path_sw_usrbin="/usr/bin/smond"
     rm -f $t_path_sw_initd >> $LOG_INSTALL 2>&1
     ln -s $t_path_swan_soft $t_path_sw_initd >> $LOG_INSTALL 2>&1
     rm -f $t_path_sw_usrbin >> $LOG_INSTALL 2>&1
     ln -s $t_path_swan_soft $t_path_sw_usrbin >> $LOG_INSTALL 2>&1
-    $CMD_CHKCONFIG swan_mon off >> $LOG_INSTALL 2>&1
+    $CMD_CHKCONFIG smond off >> $LOG_INSTALL 2>&1
 
     echo_log -e "$ECHO_OK"
 }

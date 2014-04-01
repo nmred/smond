@@ -25,7 +25,7 @@
 #
 
 # {{{
-PATH_SWAN="/usr/local/swan_mon"
+PATH_SWAN="/usr/local/swan/smond"
 PATH_OPT="$PATH_SWAN/opt"
 PATH_SBIN="$PATH_SWAN/app/sbin"
 PATH_SBIN_MOND="$PATH_SBIN/sw_mond"
