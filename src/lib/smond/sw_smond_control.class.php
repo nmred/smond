@@ -326,8 +326,8 @@ class sw_smond_control
 			$context = array();
 			$context['timeout'] = 2000; // 默认等待 2s ，当队列为空时	
 			$context['device_name'] = null;
+			$context['madapter_name'] = null;
 			$context['monitor_name'] = null;
-			$context['dm_name'] = null;
 			$context['metric_name'] = null;
 		} else {
 			$context = json_decode($context, true);
@@ -338,8 +338,8 @@ class sw_smond_control
 				$context['timeout'] / 1000,
 				$pid,
 				$context['device_name'],
+				$context['madapter_name'],
 				$context['monitor_name'],
-				$context['dm_name'],
 				$context['metric_name'],
 			);
 			$this->_create_timer($context);
@@ -391,7 +391,7 @@ class sw_smond_control
      */
     public function callback_timer($context)
     {
-		list($timeout, $pid, $device_name, $monitor_name, $dm_name, $metric_name) = $context;
+		list($timeout, $pid, $device_name, $madapter_name, $monitor_name, $metric_name) = $context;
         if (!isset($this->__event_timer[$timeout])) {
             $log = "this event timer has free, timeout: {$timeout}.";
             $this->log($log, LOG_DEBUG);
@@ -404,7 +404,7 @@ class sw_smond_control
             $this->log($log, LOG_INFO);
         }
 		$this->_fork();
-		$log = "device_name:$device_name, dm_name:$dm_name, monitor_name:$monitor_name, metric_name: $metric_name, get data timeout.";
+		$log = "device_name:$device_name, monitor_name:$monitor_name, madapter_name:$madapter_name, metric_name: $metric_name, get data timeout.";
 		$this->log($log, LOG_INFO);
     }
 

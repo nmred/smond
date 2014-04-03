@@ -84,6 +84,11 @@ class sw_monitor
 			self::$__log->add_writer($writer);
 		}
 		if (!isset(self::$__instances[$monitor_name])) {
+			$class_path = PATH_SWAN_LIB . 'monitor/adapter/sw_' . $monitor_name . '.class.php';
+			if (!file_exists($class_path)) {
+				self::$__log->log("not load $monitor_name adapter.", LOG_INFO);
+				return array();	
+			}  
 			try {
 				$class_name = "\\lib\\monitor\\adapter\\sw_" . $monitor_name;
 				self::$__instances[$monitor_name] = new $class_name();
@@ -97,7 +102,9 @@ class sw_monitor
 
 		$monitor = self::$__instances[$monitor_name];
 		try {
-			return $monitor->run($params);
+			$data = $monitor->run($params);
+			self::$__log->log("get monitor data:" . var_export($data, true), LOG_DEBUG);
+			return $data;
 		} catch (\swan\exception\sw_exception $e) {
 			self::$__log->log($e->getMessage(), LOG_INFO);		
 			return array();

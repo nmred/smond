@@ -156,28 +156,28 @@ class sw_smond_metric
 		$collect_every = $data['value']['collect_every'];
 		$fifo_data = array(
 			'timeout' => (int)$data['value']['time_threshold'],
-			'monitor_name' => $monitor_name,
-			'dm_name'      => $dm_name,
-			'device_name'  => $device_name,
-			'metric_name'  => $metric_name,
+			'madapter_name' => $madapter_name,
+			'monitor_name'  => $monitor_name,
+			'device_name'   => $device_name,
+			'metric_name'   => $metric_name,
 		);
 
 		// 告诉控制进程创建超时定时器
 		$this->_write_fifo($fifo_data);
 
-		if (!isset($this->__cache_data['data'][$device_id][$dm_id])
-			|| !isset($this->__cache_data['time'][$device_id][$dm_id])
-			|| (time() - $this->__cache_data['time'][$device_id][$dm_id]) > $collect_every) {
-			$metric_data = sw_monitor::run($monitor_name, $params);
-			$this->__cache_data['data'][(string)$device_id][(string)$dm_id] = $metric_data;
-			$this->__cache_data['time'][(string)$device_id][(string)$dm_id] = time();
+		if (!isset($this->__cache_data['data'][$device_id][$monitor_id])
+			|| !isset($this->__cache_data['time'][$device_id][$monitor_id])
+			|| (time() - $this->__cache_data['time'][$device_id][$monitor_id]) > $collect_every) {
+			$metric_data = sw_monitor::run($madapter_name, $params);
+			$this->__cache_data['data'][(string)$device_id][(string)$monitor_id] = $metric_data;
+			$this->__cache_data['time'][(string)$device_id][(string)$monitor_id] = time();
 		}
 		
-		if (!isset($this->__cache_data['data'][$device_id][$dm_id][$metric_name])) {
+		if (!isset($this->__cache_data['data'][$device_id][$monitor_id][$metric_name])) {
 			return; // 不发送数据	
 		}	
 		
-		$value = $this->__cache_data['data'][$device_id][$dm_id][$metric_name];
+		$value = $this->__cache_data['data'][$device_id][$monitor_id][$metric_name];
 		$this->_send(array($data['id'], array('value' => $value, 'time' => time())));
 	}
 
